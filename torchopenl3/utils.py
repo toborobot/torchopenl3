@@ -32,11 +32,15 @@ def pad_audio(audio, frame_len, hop_len):
 def preprocess_audio_batch(audio, sr, center=True, hop_size=0.1, sampler="julian"):
     if audio.ndim == 3:
         audio = torch.mean(audio, axis=2)
+        
+    #Only jilian now works with target embedded platforms
+    if sampler != "julian":
+        sampler = "julian"
 
     if sr != TARGET_SR:
         if sampler == "julian":
             audio = julius.resample_frac(audio, sr, TARGET_SR)
-
+        """
         elif sampler == "resampy":
             logging.warning(
                 "To get accurate results we have to move "
@@ -52,9 +56,10 @@ def preprocess_audio_batch(audio, sr, center=True, hop_size=0.1, sampler="julian
                 dtype=audio.dtype,
                 device=audio.device,
             )
-
+        """
         else:
-            raise ValueError("Only julian and resampy works!")
+            #raise ValueError("Only julian and resampy works!")
+            raise ValueError("Only julian works!")
 
     frame_len = TARGET_SR
     hop_len = int(hop_size * TARGET_SR)
