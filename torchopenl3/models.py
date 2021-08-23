@@ -108,7 +108,7 @@ class CustomSTFT(nn.Module):
         dft_imag_kernels = -np.sin(w_ks.reshape(-1, 1) * timesteps.reshape(1, -1))
 
         # windowing DFT filters
-        dft_window = librosa.filters.get_window(
+        dft_window = emblibrosa.get_window(
             "hann", n_dft, fftbins=True
         )  # _hann(n_dft, sym=False)
         dft_window = dft_window.astype(np.float32)
@@ -197,7 +197,7 @@ class CustomMelSTFT(CustomSTFT):
         self.power_melgram = power_melgram
         self.return_decibel_melgram = return_decibel_melgram
 
-        mel_basis = librosa.filters.mel(
+        mel_basis = emblibrosa.mel(
             sr=sr,
             n_fft=n_dft,
             n_mels=n_mels,
