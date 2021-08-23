@@ -1603,6 +1603,209 @@ def resample(
 
     return np.asfortranarray(y_hat, dtype=y.dtype)
 
+def normalize(S, norm=np.inf, axis=0, threshold=None, fill=None):
+    """Normalize an array along a chosen axis.
+    Given a norm (described below) and a target axis, the input
+    array is scaled so that::
+        norm(S, axis=axis) == 1
+    For example, ``axis=0`` normalizes each column of a 2-d array
+    by aggregating over the rows (0-axis).
+    Similarly, ``axis=1`` normalizes each row of a 2-d array.
+    This function also supports thresholding small-norm slices:
+    any slice (i.e., row or column) with norm below a specified
+    ``threshold`` can be left un-normalized, set to all-zeros, or
+    filled with uniform non-zero values that normalize to 1.
+    Note: the semantics of this function differ from
+    `scipy.linalg.norm` in two ways: multi-dimensional arrays
+    are supported, but matrix-norms are not.
+    Parameters
+    ----------
+    S : np.ndarray
+        The matrix to normalize
+    norm : {np.inf, -np.inf, 0, float > 0, None}
+        - `np.inf`  : maximum absolute value
+        - `-np.inf` : minimum absolute value
+        - `0`    : number of non-zeros (the support)
+        - float  : corresponding l_p norm
+            See `scipy.linalg.norm` for details.
+        - None : no normalization is performed
+    axis : int [scalar]
+        Axis along which to compute the norm.
+    threshold : number > 0 [optional]
+        Only the columns (or rows) with norm at least ``threshold`` are
+        normalized.
+        By default, the threshold is determined from
+        the numerical precision of ``S.dtype``.
+    fill : None or bool
+        If None, then columns (or rows) with norm below ``threshold``
+        are left as is.
+        If False, then columns (rows) with norm below ``threshold``
+        are set to 0.
+        If True, then columns (rows) with norm below ``threshold``
+        are filled uniformly such that the corresponding norm is 1.
+        .. note:: ``fill=True`` is incompatible with ``norm=0`` because
+            no uniform vector exists with l0 "norm" equal to 1.
+    Returns
+    -------
+    S_norm : np.ndarray [shape=S.shape]
+        Normalized array
+    Raises
+    ------
+    ParameterError
+        If ``norm`` is not among the valid types defined above
+        If ``S`` is not finite
+        If ``fill=True`` and ``norm=0``
+    See Also
+    --------
+    scipy.linalg.norm
+    Notes
+    -----
+    This function caches at level 40.
+    Examples
+    --------
+    >>> # Construct an example matrix
+    >>> S = np.vander(np.arange(-2.0, 2.0))
+    >>> S
+    array([[-8.,  4., -2.,  1.],
+           [-1.,  1., -1.,  1.],
+           [ 0.,  0.,  0.,  1.],
+           [ 1.,  1.,  1.,  1.]])
+    >>> # Max (l-infinity)-normalize the columns
+    >>> librosa.util.normalize(S)
+    array([[-1.   ,  1.   , -1.   ,  1.   ],
+           [-0.125,  0.25 , -0.5  ,  1.   ],
+           [ 0.   ,  0.   ,  0.   ,  1.   ],
+           [ 0.125,  0.25 ,  0.5  ,  1.   ]])
+    >>> # Max (l-infinity)-normalize the rows
+    >>> librosa.util.normalize(S, axis=1)
+    array([[-1.   ,  0.5  , -0.25 ,  0.125],
+           [-1.   ,  1.   , -1.   ,  1.   ],
+           [ 0.   ,  0.   ,  0.   ,  1.   ],
+           [ 1.   ,  1.   ,  1.   ,  1.   ]])
+    >>> # l1-normalize the columns
+    >>> librosa.util.normalize(S, norm=1)
+    array([[-0.8  ,  0.667, -0.5  ,  0.25 ],
+           [-0.1  ,  0.167, -0.25 ,  0.25 ],
+           [ 0.   ,  0.   ,  0.   ,  0.25 ],
+           [ 0.1  ,  0.167,  0.25 ,  0.25 ]])
+    >>> # l2-normalize the columns
+    >>> librosa.util.normalize(S, norm=2)
+    array([[-0.985,  0.943, -0.816,  0.5  ],
+           [-0.123,  0.236, -0.408,  0.5  ],
+           [ 0.   ,  0.   ,  0.   ,  0.5  ],
+           [ 0.123,  0.236,  0.408,  0.5  ]])
+    >>> # Thresholding and filling
+    >>> S[:, -1] = 1e-308
+    >>> S
+    array([[ -8.000e+000,   4.000e+000,  -2.000e+000,
+              1.000e-308],
+           [ -1.000e+000,   1.000e+000,  -1.000e+000,
+              1.000e-308],
+           [  0.000e+000,   0.000e+000,   0.000e+000,
+              1.000e-308],
+           [  1.000e+000,   1.000e+000,   1.000e+000,
+              1.000e-308]])
+    >>> # By default, small-norm columns are left untouched
+    >>> librosa.util.normalize(S)
+    array([[ -1.000e+000,   1.000e+000,  -1.000e+000,
+              1.000e-308],
+           [ -1.250e-001,   2.500e-001,  -5.000e-001,
+              1.000e-308],
+           [  0.000e+000,   0.000e+000,   0.000e+000,
+              1.000e-308],
+           [  1.250e-001,   2.500e-001,   5.000e-001,
+              1.000e-308]])
+    >>> # Small-norm columns can be zeroed out
+    >>> librosa.util.normalize(S, fill=False)
+    array([[-1.   ,  1.   , -1.   ,  0.   ],
+           [-0.125,  0.25 , -0.5  ,  0.   ],
+           [ 0.   ,  0.   ,  0.   ,  0.   ],
+           [ 0.125,  0.25 ,  0.5  ,  0.   ]])
+    >>> # Or set to constant with unit-norm
+    >>> librosa.util.normalize(S, fill=True)
+    array([[-1.   ,  1.   , -1.   ,  1.   ],
+           [-0.125,  0.25 , -0.5  ,  1.   ],
+           [ 0.   ,  0.   ,  0.   ,  1.   ],
+           [ 0.125,  0.25 ,  0.5  ,  1.   ]])
+    >>> # With an l1 norm instead of max-norm
+    >>> librosa.util.normalize(S, norm=1, fill=True)
+    array([[-0.8  ,  0.667, -0.5  ,  0.25 ],
+           [-0.1  ,  0.167, -0.25 ,  0.25 ],
+           [ 0.   ,  0.   ,  0.   ,  0.25 ],
+           [ 0.1  ,  0.167,  0.25 ,  0.25 ]])
+    """
+
+    # Avoid div-by-zero
+    if threshold is None:
+        threshold = tiny(S)
+
+    elif threshold <= 0:
+        raise ParameterError(
+            "threshold={} must be strictly " "positive".format(threshold)
+        )
+
+    if fill not in [None, False, True]:
+        raise ParameterError("fill={} must be None or boolean".format(fill))
+
+    if not np.all(np.isfinite(S)):
+        raise ParameterError("Input must be finite")
+
+    # All norms only depend on magnitude, let's do that first
+    mag = np.abs(S).astype(np.float)
+
+    # For max/min norms, filling with 1 works
+    fill_norm = 1
+
+    if norm == np.inf:
+        length = np.max(mag, axis=axis, keepdims=True)
+
+    elif norm == -np.inf:
+        length = np.min(mag, axis=axis, keepdims=True)
+
+    elif norm == 0:
+        if fill is True:
+            raise ParameterError("Cannot normalize with norm=0 and fill=True")
+
+        length = np.sum(mag > 0, axis=axis, keepdims=True, dtype=mag.dtype)
+
+    elif np.issubdtype(type(norm), np.number) and norm > 0:
+        length = np.sum(mag ** norm, axis=axis, keepdims=True) ** (1.0 / norm)
+
+        if axis is None:
+            fill_norm = mag.size ** (-1.0 / norm)
+        else:
+            fill_norm = mag.shape[axis] ** (-1.0 / norm)
+
+    elif norm is None:
+        return S
+
+    else:
+        raise ParameterError("Unsupported norm: {}".format(repr(norm)))
+
+    # indices where norm is below the threshold
+    small_idx = length < threshold
+
+    Snorm = np.empty_like(S)
+    if fill is None:
+        # Leave small indices un-normalized
+        length[small_idx] = 1.0
+        Snorm[:] = S / length
+
+    elif fill:
+        # If we have a non-zero fill value, we locate those entries by
+        # doing a nan-divide.
+        # If S was finite, then length is finite (except for small positions)
+        length[small_idx] = np.nan
+        Snorm[:] = S / length
+        Snorm[np.isnan(Snorm)] = fill_norm
+    else:
+        # Set small values to zero by doing an inf-divide.
+        # This is safe (by IEEE-754) as long as S is finite.
+        length[small_idx] = np.inf
+        Snorm[:] = S / length
+
+    return Snorm
+
 
 def __audioread_load(path, offset, duration, dtype):
     """Load an audio buffer using audioread.
