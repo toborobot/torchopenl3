@@ -18,52 +18,40 @@ The audio and image embedding models provided here are published as part of [1],
 Jason Cramer, Ho-Hsiang Wu, Justin Salamon, and Juan Pablo Bello.<br/>
 IEEE Int. Conf. on Acoustics, Speech and Signal Processing (ICASSP), pages 3852–3856, Brighton, UK, May 2019.
 
-# Comparasion
-
-We run torchopenl3 over 100 audio files and compare with openl3 embeddings. Below is the MAE (Mean Absolute Error) Table
-
-
-| Content_type | Input_repr | Emd_size |           MAE          |
-|:------------:|:----------:|:--------:|:----------------------:|
-|      Env     |   Linear   |    512   | 1.1522600237867664e-06 |
-|      Env     |   Linear   |   6144   |  1.027089645617707e-06 |
-|      Env     |   Mel128   |    512   | 1.2094695046016568e-06 |
-|      Env     |   Mel128   |   6144   | 1.0968088741947213e-06 |
-|      Env     |   Mel256   |    512   | 1.1641358707947802e-06 |
-|      Env     |   Mel256   |   6144   | 1.0069775197507625e-06 |
-|     Music    |   Linear   |    512   |  1.173499645119591e-06 |
-|     Music    |   Linear   |   6144   |  1.048712784381678e-06 |
-|     Music    |   Mel128   |    512   | 1.1837427564387327e-06 |
-|     Music    |   Mel128   |   6144   | 1.0497348176841115e-06 |
-|     Music    |   Mel256   |    512   | 1.1619711483490392e-06 |
-|     Music    |   Mel256   |   6144   |  9.881532906774738e-07 |
-
 
 # Installation
 [![PyPI](https://img.shields.io/badge/python-3.6%2C%203.7-blue.svg)](https://pypi.python.org/pypi/openl3)  
 Install via pip 
 ```
-pip install git+https://github.com/turian/torchopenl3.git
-```
-Install the package with all dev libraries (i.e. tensorflow openl3)
-```
-git clone https://github.com/turian/torchopenl3.git
-pip3 install -e ".[dev]"
-```
-
-Install Docker and work within the Docker environment.
-Unfortunately this Docker image is quite big (about 4 GB) because
-
-```
-docker pull turian/torchopenl3
-# Or, build the docker yourself
-#docker build -t turian/torchopenl3 .
+pip install git+https://github.com/toborobot/torchopenl3.git
 ```
 
 # Using TorchpenL3
-[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1LHbM1WN_1LK61R6XEbUlrtmRb3fKlDov?usp=sharing) 
+```
+url = 'https://raw.githubusercontent.com/marl/openl3/master/tests/data/audio/chirp_44k.wav'
+filename = 'Sample_audio.wav'
+r = requests.get(url, allow_redirects=True)
+open(filename, "wb").write(r.content)
 
-To help you get started with TorchopenL3 please go through the colab file.
+emb, ts = torchopenl3.get_audio_embedding(audio, sr)
+
+emb, ts = torchopenl3.get_audio_embedding(audio, sr, content_type="env",
+                               input_repr="linear", embedding_size=512)
+
+print(f"Embedding Shape {emb.shape}")
+print(f"TimeStamps Shape {ts.shape}")
+
+emb, ts = torchopenl3.get_audio_embedding(audio, sr, center=False)
+print(f"Embedding Shape {emb.shape}")
+print(f"TimeStamps Shape {ts.shape}")
+
+model = torchopenl3.models.load_audio_embedding_model(input_repr="mel256", content_type="music",
+                                                 embedding_size=512)
+emb, ts = torchopenl3.get_audio_embedding(audio, sr, model=model)
+print(f"Embedding Shape {emb.shape}")
+print(f"TimeStamps Shape {ts.shape}")
+
+```
 
 # Acknowledge
 Special Thank you to [Joseph Turian](https://github.com/turain) for his help
