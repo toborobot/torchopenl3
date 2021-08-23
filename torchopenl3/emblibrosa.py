@@ -1653,7 +1653,7 @@ def tiny(x):
     else:
         dtype = np.float32
 
-    return np.finfo(dtype).
+    return np.finfo(dtype).tiny
 
 def normalize(S, norm=np.inf, axis=0, threshold=None, fill=None):
     """Normalize an array along a chosen axis.
