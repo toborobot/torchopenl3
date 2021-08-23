@@ -1,4 +1,4 @@
-# Torchopenl3 changed to work with ebmlibrosa (for embedded platforms)
+# Torchopenl3 /Not officional fork, changed to work with ebmlibrosa (for embedded platforms)/
 TorchopenL3 is an open-source Python library Pytorch Support for computing deep audio embeddings.
 
 
