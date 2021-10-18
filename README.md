@@ -1,7 +1,7 @@
 # Torchopenl3 /Not official fork, changed to work with ebmlibrosa (for embedded platforms)/
 TorchopenL3 is an open-source Python library Pytorch Support for computing deep audio embeddings.
 
-Works without librosa (changed to emblibrosa file which is use only few functions which is need for torchopenl3).
+Works without librosa (changed to emblibrosa file which is use only few functions which is need for torchopenl3). Excluded numba and resampy packages, which have problem with installation at embedded ARM platforms.
 Also it is not used resampy (used only julian for resample audio) and others lubraries which is need numba and others libraries not existed in embedded platforms.
 
 #ATTENTION
