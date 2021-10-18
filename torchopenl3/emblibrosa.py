@@ -1,6 +1,6 @@
 ############################################################################
-# custom embedded librosa lib v1.0 20210823
-# torchopenl3 testing purpose
+# custom embedded librosa lib v1.2 20210908 develop@toborobot.ru
+# from librosa modified to embedded devices
 ############################################################################
 
 import torch
@@ -1473,7 +1473,7 @@ def to_mono(y):
 
 #@cache(level=20)
 def resample(
-    y, orig_sr, target_sr, res_type="linear", fix=True, scale=False, **kwargs
+    y, orig_sr, target_sr, res_type="sinc_best", fix=True, scale=False, **kwargs
 ):
     """Resample a time series from orig_sr to target_sr
     By default, this uses a linear method
@@ -1594,6 +1594,11 @@ def resample(
         y_hat = soxr.resample(y.T, orig_sr, target_sr, quality=res_type).T
     #else:
     #    y_hat = resampy.resample(y, orig_sr, target_sr, filter=res_type, axis=-1)
+    else:
+        import samplerate
+
+        # We have to transpose here to match libsamplerate
+        y_hat = samplerate.resample(y.T, ratio, converter_type=res_type).T
 
     if fix:
         y_hat = fix_length(y_hat, n_samples, **kwargs)
@@ -1919,7 +1924,7 @@ def load(
     offset=0.0,
     duration=None,
     dtype=np.float32,
-    res_type="kaiser_best",
+    res_type="sinc_best",
 ):
     """Load an audio file as a floating point time series.
     Audio will be automatically resampled to the given rate
